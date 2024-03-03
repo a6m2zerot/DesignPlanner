@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <style>
+        .wrapper {
+            display:flex;
+            flex-direction: column;
+        }
+        .card {  
+            height: auto;
+            width: 80%;
+            margin: 15px auto 15px auto;
+            border: 1px solid black;
+            border-radius: 15px;
+            background-color: rgb(219, 253, 211);
+            display: grid;
+            grid-template-columns: 20% 20% 25% 25% 10fr;
+            grid-template-rows: 1fr;
+            gap: 0px 0px;
+            grid-auto-flow: row;
+            grid-template-areas: "logo_area status_area task_area meeting_area buttons_area";
+            padding: 10px 10px;
+        }
+        .logo_area { grid-area: logo_area; align-self: center;}
+        .status_area { grid-area: status_area;}
+        .task_area { grid-area: task_area; }
+        .meeting_area { grid-area: meeting_area; }
+        .buttons_area { 
+            grid-area: buttons_area; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;}
+        .logo_image {
+            max-width: 200px; /* ВЕРНО ЛИ ВЫСТАВЛЕНЫ ЗНАЧЕНИЯ????????????? */
+            max-height: auto; /* ВЕРНО ЛИ ВЫСТАВЛЕНЫ ЗНАЧЕНИЯ????????????? */
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            border-radius: 15px;
+        }
+        .img {
+            width: 30px;
+            height: 30px;
+        }
+
+        /*HEADER styles*/
+        .container_header {  
+            display: grid;
+            grid-template-columns: 0.5fr 0.5fr 2fr 0.5fr 0.5fr;
+            grid-template-rows: 1fr;
+            gap: 0px 0px;
+            grid-auto-flow: row;
+            grid-template-areas: "home back functions username out";
+            height: auto;
+            background-color: whitesmoke;
+            margin-bottom: 20px;
+        }
+
+        .home { grid-area: home; margin: 10px; text-align: center; text-decoration: none;}
+        .back { grid-area: back; margin: auto; text-align: center;}
+        .functions { grid-area: functions; margin: auto; text-align: center;}
+        .username { grid-area: username; margin: auto; text-align: center;}
+        .out { grid-area: out; margin: auto; text-align: center;}
+
+        .btn-new,
+        .back {
+            border-radius: 10px;
+            color: #1755c0;
+            transition: .2s linear;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px #4f8fff;
+        }
+
+        .btn-new:hover,
+        .back:hover {
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3C82F8;
+        }
+    </style>
+    <title>Document</title>
+</head>
+<body>
+{% if user.is_authenticated %}
+                <!--NAVBAR -->
+                <div class="container_header">
+                        <div class="home"><img class="logo_image" src="{% static 'img/fox.png' %}" alt="home_logo">FoxDesign Planner</div>
+                        <a class="back" href="{{request.META.HTTP_REFERER}}">Назад</a>
+                        <div class="functions">
+                            <a type="submit" class="btn-new" href="{% url 'new_date' %}" style="margin-right: 40px">Календарный вид</a>
+                            <a type="submit" class="btn-new" href="{% url 'creation_form' %}">Создать новый проект</a>
+                        </div>
+                        <div class="username">Пользователь: <b>{{ user.username }}</b></div>
+                        <div class="out"><a type="submit" class="btn-new" href="{% url 'logout_func' %}">Выйти</a></div>
+                </div>
+
+                <!--AКТИВНЫЕ КАРТОЧКИ ПРОЕКТОВ-->
+    {% if active_projects %}
+    <h2 style="display: flex; justify-content: center;">Активные проекты</h2>
+    <div class="wrapper">
+        {% for d in active_projects %}
+            <div class="card">
+                <div class="logo_area">
+                    {% if d.logo.url == '/media/null' %}
+                            <a href="{% url 'go_to_project' id=d.id %}"><img class="logo_image" src="{% static 'img/sun.jpg' %}" alt="project_logo"></a>
+                        {% else %}
+                            <a href="{% url 'go_to_project' id=d.id %}"><img class="logo_image" src="{{ d.logo.url }}" alt="project_logo"></a>
+                    {% endif %}
+                </div>
+                <div class="status_area">
+                    <h5>{{ d.project_name }}</h5>
+                    <!--Выводим описание проекта, если есть-->
+                    {% if d.description %}
+                        <p>{{ d.description }}</p>
+                    {% endif %}
+                        <p> Создан: {{ d.date_of_creation.date }}</p>
+                            {% if d.project_status == 'active' %}
+                        <p>Статус: Активный </p>
+                            {% else %}
+                        <p>Статус: Завершен </p>
+                            {% endif %}
+                </div>
+                <div class="task_area">
+                    <h5 style="color: red;">Активные задачи</h5>
+                    <!--Выводим активные задачи проекта, если есть-->
+                    {% if d.task_set.all %}
+                        {% for el in d.task_set.all %}
+                             {% if el.task_status == 'active' %}
+                                <div class="active_tasks" style="color: red;">{{ el.task }}, {{ el.deadline|date:'d.m.Y H:i' }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="meeting_area">
+                    <h5 style="color: green;">Активные встречи</h5>
+                    <!--Выводим активные встречи проекта, если есть-->
+                    {% if d.meetings_set.all %}
+                        {% for el in d.meetings_set.all %}
+                            {% if el.meeting_status == 'active' %}
+                                <div class="active_meetings" style="color: green;">{{ el.meeting_name }}, {{ el.meeting_time_start|date:'d.m.Y H:i' }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="buttons_area">
+                    <a href="{% url 'go_to_project' id=d.id %}"><img class="img" src="{% static 'img/change.png' %}" alt="Картинка" title="Редактировать"></a>
+                    <a type="button" data-bs-toggle="modal" data-bs-target="#finish_project{{ d.id }}"><img class="img" src="{% static 'img/completed.png' %}" alt="Картинка" title="Завершить"></a>
+                                <!-- Модалка с предупреждением о ЗАВЕРШЕНИИ (перевод в статус completed) проекта -->
+                                <div class="modal fade" id="finish_project{{ d.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="exampleModalLabel">Завершение</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                        Вы уверены, что хотите завершить проект "{{ d.project_name }}"? Завершенный проект всегда можно будет перевести обратно в статус активного. Также сохранится история всех действий по проекту.
+                                        </div>
+                                        <div class="modal-footer">
+                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                        <a type="button" class="btn btn-warning" href="{% url 'finish_project' id=d.id %}">Завершить проект</a>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                    <a type="button" data-bs-toggle="modal" data-bs-target="#delete_project{{ d.id }}"><img class="img" src="{% static 'img/delete.png' %}" alt="Картинка" title="Удалить"></a>
+                                <!-- Модалка с предупреждением об УДАЛЕНИИ проекта -->
+                                <div class="modal fade" id="delete_project{{ d.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                        Вы уверены, что хотите удалить проект "{{ d.project_name }}"? Восстановить проект будет уже невозможно и вся <br>история по нему будет стёрта!
+                                        </div>
+                                        <div class="modal-footer">
+                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                        <a type="button" class="btn btn-danger" href="{% url 'delete_project' id=d.id %}">Всё равно удалить</a>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                  </div>
+                </div>
+            </div>
+
+        {% endfor %}
+    </div>
+    {% else %}
+        <h2 style="display: flex; justify-content: center;">Активных проектов нет</h2>
+    {% endif %}
+<br>
+<br>
+            <!--ЗАВЕРШЕННЫЕ КАРТОЧКИ ПРОЕКТОВ-->
+    {% if completed_projects %}
+    <h2 style="display: flex; justify-content: center;">Завершенные проекты</h2>
+    <div class="wrapper">
+        {% for d in completed_projects %}
+            <div class="card" style='background-color:rgb(240, 240, 240);'>
+                <div class="logo_area">
+                    {% if d.logo.url == '/media/null' %}
+                            <img class="logo_image" src="{% static 'img/sun.jpg' %}" class="image" alt="project_logo">
+                        {% else %}
+                            <img class="logo_image" src="{{ d.logo.url }}" class="image" alt="project_logo">
+                    {% endif %}
+                </div>
+                <div class="status_area">
+                    <h5>{{ d.project_name }}</h5>
+                    <!--Выводим описание проекта, если есть-->
+                    {% if d.description %}
+                        <p>{{ d.description }}</p>
+                    {% endif %}
+                        <p> Создан: {{ d.date_of_creation.date }}</p>
+                            {% if d.project_status == 'active' %}
+                        <p>Статус: Активный </p>
+                            {% else %}
+                        <p>Статус: Завершен </p>
+                            {% endif %}
+                </div>
+                <div class="task_area">
+                    <h5 style="color: red;">Задачи</h5>
+                    {% if d.task_set.all %}
+                        {% for el in d.task_set.all %}
+                                <div class="active_tasks">{{ el.task }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="meeting_area">
+                    <h5 style="color: green;">Встречи</h5>
+                    {% if d.meetings_set.all %}
+                        {% for el in d.meetings_set.all %}
+                                <div class="active_meetings">{{ el.meeting_name }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="buttons_area">
+                    <a type="button" data-bs-toggle="modal" data-bs-target="#recover_project{{ d.id }}"><img class="img" src="{% static 'img/recover.png' %}" alt="Картинка" title="Сделать активным"></a>
+                            <!-- Модалка с предупреждением об АКТИВИЗАЦИИ проекта (переход из статуса completed в active) -->
+                            <div class="modal fade" id="recover_project{{ d.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="exampleModalLabel">Восстановление</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                    Вы уверены, что хотите восстановить проект "{{ d.project_name }}"? При этом его статус поменяется на "Активный" и Вы сможете продолжить работу над проектом.
+                                    </div>
+                                    <div class="modal-footer">
+                                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                    <a type="button" class="btn btn-warning" href="{% url 'recover_project' id=d.id %}">Сделать активным</a>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{% else %}
+    <h2><a href="{% url 'login_func' %}">Пожалуйста, авторизуйтесь</a></h2>
+{% endif %}
+</body>
+</html>

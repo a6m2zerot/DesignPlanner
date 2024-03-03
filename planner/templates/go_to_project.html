@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+{% load static %}
+{% load planner_tags %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'css/style_modal_activity.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style_modal_meeting.css' %}">
+
+    <script src="{% static 'js/create_modal.js' %}" defer></script>
+    <script src="{% static 'js/create_modal_meeting.js' %}" defer></script>
+    <script src="{% static 'js/create_activity.js' %}" defer></script>
+    <script src="{% static 'js/change_meeting_time.js' %}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> <!--Необходимо для flatpickr-->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> <!--Необходимо для flatpickr-->
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css"> <!--меняет цвет окна flatpickr-->
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script> <!--Русский пакет для flatpickr-->
+    <style>
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+      .my_container {
+          display: flex;
+          width: 100%;
+          height: 100vh;
+      }
+      .first_col {
+          flex-basis: 44%;
+          flex-grow: 1;
+          margin: 20px;
+      }
+      .second_col {
+          flex-basis: 44%;
+          flex-grow: 1;
+          margin: 20px;
+      }
+      .third_col {
+          flex-basis: 12%;
+          flex-grow: 1;
+          margin: 20px;
+      }
+      .third_col_cover {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        justify-content: center;
+        height: 65vh;
+      }
+      #open_modal,
+      #open_modal_meeting,
+      #save_status_changes {
+        color: whitesmoke;
+        border: 1px solid black;
+        border-radius: 15px;
+        width: auto;
+        height: 8vh;
+      }
+      .panel {
+        padding: 0 18px;
+        min-height: 20px;
+        width: 100%;
+        background-color: white;
+        margin-left: 30px;
+      }
+      .show_tasks,
+      .show_meetings {
+        background-color: #eee;
+        cursor: pointer;
+        padding: 5px;
+        margin: 5px;
+        width: 100%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
+      }
+      .show_subtasks {
+        background-color: aliceblue;
+        margin: 5px;
+      }
+      /* Кнопка удаления подзадачи в модальном окне */
+      .remove_active {
+        background-image: url("{% static 'img/closeButton.png' %}");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        width: 30px;
+        height: 30px;
+        padding: 10px;
+        border: none;
+        cursor: pointer;
+      }
+      .img {
+        width: 30px;
+        height: 30px;
+        margin: 10px 10px;
+      }
+      h1, 
+      h3 {
+        display: flex;
+        justify-content: center;
+        text-align: center;
+      }
+
+      /*HEADER styles*/
+      .container_header {  
+            display: grid;
+            grid-template-columns: 0.5fr 0.5fr 2fr 0.5fr 0.5fr;
+            grid-template-rows: 1fr;
+            gap: 0px 0px;
+            grid-auto-flow: row;
+            grid-template-areas: "home back functions username out";
+            height: auto;
+            background-color: whitesmoke;
+            margin-bottom: 20px;
+        }
+
+        .home { grid-area: home; margin: 10px; text-align: center; text-decoration: none;}
+        .back { grid-area: back; margin: auto; text-align: center;}
+        .functions { grid-area: functions; margin: auto; text-align: center;}
+        .username { grid-area: username; margin: auto; text-align: center;}
+        .out { grid-area: out; margin: auto; text-align: center;}
+
+        .btn-new,
+        .back,
+        .home {
+            border-radius: 10px;
+            color: #1755c0;
+            transition: .2s linear;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px #4f8fff;
+        }
+
+        .btn-new:hover,
+        .back:hover,
+        .home:hover {
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3C82F8;
+        }
+  </style>
+    <title>Document</title>
+</head>
+<body>
+{% if user.is_authenticated %}
+
+                <!--NAVBAR -->
+                <div class="container_header">
+                  <a class="home" href="{% url 'home' %}"><img class="logo_image" src="{% static 'img/fox.png' %}" alt="home_logo">На главную</a>
+                  <a class="back" href="{{request.META.HTTP_REFERER}}">Назад</a>
+                  <div class="functions">
+                      <a type="submit" class="btn-new" href="{% url 'new_date' %}" style="margin-right: 40px">Календарный вид</a>
+                      <a type="submit" class="btn-new" href="{% url 'creation_form' %}">Создать новый проект</a>
+                  </div>
+                  <div class="username">Пользователь: <b>{{ user.username }}</b></div>
+                  <div class="out"><a type="submit" class="btn-new" href="{% url 'logout_func' %}">Выйти</a></div>
+                </div>
+
+                <h1 style="display: flex; justify-content: center; color: brown;">{{ info.project_name }}
+                    <a href="{% url 'change_project' info.id %}" style="margin-left: 20px;"><img class="img" src="{% static 'img/change.png' %}"  alt="Картинка" title="Редактировать"></a>
+                </h1>
+                <!--Добавить картинки-->
+
+
+        <div class="my_container">
+            <div class="first_col">
+                    <!-- ОТОБРАЖЕНИЕ ЗАДАЧ И ПОДЗАДАЧ-->
+                    {% if task_result_active %}
+                      <h1 style="color: red;">Активные задачи</h1>
+                    {% else %}
+                      <h1 style="color: red;">Активных задач нет</h1>
+                    {% endif %}
+                          {% if task_result_active %}
+                              <div class="show_body">
+                                {% for elem in task_result_active %}
+                                          <div class="show_tasks">
+                                              <a style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#complete_tsk_{{ elem.id }}"><img class="img"  src="{% static 'img/task_active.png' %}" alt="Картинка" title="Активно"></a><b>{{ elem.task }}</b> Дедлайн {{ elem.deadline|date:'d.m.Y H:i'}}
+                                              <a href="{% url 'return_task' elem.id %}"><img class="img"  src="{% static 'img/change.png' %}" alt="Картинка" title="Редактировать"></a>
+                                              <a href="{% url 'add_subtask_to_task' elem.id %}"><img class="img"  src="{% static 'img/addSubtask.png' %}" alt="Картинка" title="Создать подзадачу"></a>
+                                              <a type="button" data-bs-toggle="modal" data-bs-target="#delete_{{ elem.id }}"><img class="img"  src="{% static 'img/delete.png' %}" alt="Картинка" title="Удалить"></a>
+                                                          <!-- Модалка с предупреждением об удалении ЗАДАЧИ -->
+                                                          <div class="modal fade" id="delete_{{ elem.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-dialog-centered">
+                                                              <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                  <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление</h1>
+                                                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body" style="font-weight: normal;">
+                                                                  Вы уверены, что хотите удалить задачу "{{ elem.task }}"? 
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                  <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                                                  <a type="button" class="btn btn-danger" href="{% url 'delete_task' elem.id %}">Удалить</a>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                                          <!-- Модалка с предупреждением об изменении статуса ЗАДАЧИ -->
+                                                          <div class="modal fade" id="complete_tsk_{{ elem.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-dialog-centered">
+                                                              <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                  <h1 class="modal-title fs-5" id="exampleModalLabel">Завершение задачи</h1>
+                                                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                {% if elem.subtask_set.all|length == 0 %}
+                                                                <div class="modal-body" style="font-weight: normal;">Вы уверены, что хотите завершить задачу "{{ elem.task }}"?</div>
+                                                                {% else %}
+                                                                <div class="modal-body" style="font-weight: normal;">ВНИМАНИЕ!<br> У Вас есть активные подзадачи в задаче. Вы точно уверены, что хотите завершить задачу "{{ elem.task }}"? При этом все подзадачи получат статус "завершено"</div>
+                                                                {% endif %}
+                                                                <div class="modal-footer">
+                                                                  <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                                                  <a type="button" class="btn btn-danger" href="{% url 'complete_task' elem.id %}">Да, завершить</a>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                          </div>
+                                          <div class="panel">
+                                              {% for el in elem.subtask_set.all %}
+                                              <div class="show_subtasks">
+                                                    {% if el.subtask_status == 'active' %}
+                                                    <a style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#complete_sub_{{ el.id }}"><img class="img"  src="{% static 'img/task_active.png' %}" alt="Картинка" title="Активно"></a><b>{{ el.subtask }}</b>
+                                                    {% else %}
+                                                    <a style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#complete_sub_{{ el.id }}"><img class="img"  src="{% static 'img/task_completed.png' %}" alt="Картинка" title="Завершено"></a><b>{{ el.subtask }}</b> Завершено {{ el.completed_status_date|date:'d.m.Y H:i' }}
+                                                    {% endif %}
+                                                  <a href="{% url 'return_subtask' elem.id el.id %}"><img class="img"  src="{% static 'img/change.png' %}" alt="Картинка" title="Редактировать"></a>
+                                                  <a type="button" data-bs-toggle="modal" data-bs-target="#delete_sub{{ el.id }}"><img class="img"  src="{% static 'img/delete.png' %}" alt="Картинка" title="Удалить"></a>
+                                                    <!-- Модалка с предупреждением об удалении ПОДЗАДАЧИ -->
+                                                    <div class="modal fade" id="delete_sub{{ el.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                      <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                          <div class="modal-header">
+                                                            <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление</h1>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                          </div>
+                                                          <div class="modal-body" style="font-weight: normal;">
+                                                            Вы уверены, что хотите удалить подзадачу "{{ el.subtask }}"? 
+                                                          </div>
+                                                          <div class="modal-footer">
+                                                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                                            <a type="button" class="btn btn-danger" href="{% url 'delete_subtask' elem.id el.id %}">Удалить</a>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                    <!-- Модалка с предупреждением об изменении статуса ПОДЗАДАЧИ -->
+                                                    <div class="modal fade" id="complete_sub_{{ el.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                      <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                          <div class="modal-header">
+                                                            <h1 class="modal-title fs-5" id="exampleModalLabel">Завершение подзадачи</h1>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                          </div>
+                                                          {% tags filter=elem.id as gg %} <!--в папке templatetags лежит кастомный фильтр на подзадачи со статусом "active", фильтрованные по id проекта-->
+                                                          {% if gg.count == 1 %}
+                                                          <div class="modal-body" style="font-weight: normal;">
+                                                            "{{ el.subtask }}" - это единственная активная подзадача в задаче "{{ elem.task }}".<br>
+                                                            Вы уверены, что хотите завершить подзадачу "{{ el.subtask }}"? При этом сама задача также будет закрыта.
+                                                          </div>
+                                                          {% else %}
+                                                          <div class="modal-body" style="font-weight: normal;">
+                                                            Вы уверены, что хотите завершить подзадачу "{{ el.subtask }}"? 
+                                                          </div>
+                                                          {% endif %}
+                                                          <div class="modal-footer">
+                                                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                                            <a type="button" class="btn btn-danger" href="{% url 'complete_subtask' elem.id el.id %}">Да, завершить</a>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                              {% endfor %}
+                                          </div>                                 
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                            <!-- ОТОБРАЖЕНИЕ ЗАВЕРШЕННЫХ ЗАДАЧ-->
+                          <div class="completed_tasks" style="margin-top:30px;">
+                          {% if task_result_completed %}
+                          <h3 style="color: red">Завершенные задачи</h3>
+                          {% for elem in task_result_completed %} 
+                          <div class="accordion" id="accordionPanelsStayOpenExample">
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="panelsStayOpen-headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+                                  {{ elem.task }} Завершено: {{ elem.completed_status_date }}
+                                </button>
+                              </h2>
+                              <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse hide" aria-labelledby="panelsStayOpen-headingOne">
+                                <div class="accordion-body">
+                                  {% for el in elem.subtask_set.all %}
+                                  <strong>
+                                    <ul>
+                                      <li>{{ el.subtask }} Завершено: {{ el.completed_status_date }}</li>
+                                  </ul>
+                                  </strong>
+                                  {% endfor %}
+                                </div>
+                              </div>
+                            </div>
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="panelsStayOpen-headingTwo">
+                            </div>
+                          </div>
+                          {% endfor %}
+                          {% endif %}
+                          </div>
+            </div>
+
+            <div class="second_col">
+                      <!-- ОТОБРАЖЕНИЕ ВСТРЕЧ-->
+                        {% if meetings_result_active %}
+                          <h1 style="color: green;">Активные встречи</h1>
+                        {% else %}
+                          <h1 style="color: green;">Активных встреч нет</h1>
+                        {% endif %}
+
+                        {% if meetings_result_active %}
+                          {% for elem in meetings_result_active %}
+                              <div class="show_meetings">{{ elem.meeting_name }} Начало: {{ elem.meeting_time_start|date:'d.m.Y H:i' }} Конец: {{ elem.meeting_time_finish|date:'d.m.Y H:i' }}
+                                  <a href="{% url 'change_meeting' elem.id %}"><img class="img"  src="{% static 'img/change.png' %}" alt="Картинка" title="Редактировать"></a>
+                                  <a type="button" data-bs-toggle="modal" data-bs-target="#delete_meet{{ elem.id }}"><img class="img"  src="{% static 'img/delete.png' %}" alt="Картинка" title="Удалить"></a>
+                                  <!-- Модалка с предупреждением об удалении ВСТРЕЧ -->
+                                  <div class="modal fade" id="delete_meet{{ elem.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление</h1>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body" style="font-weight: normal;">
+                                          Вы уверены, что хотите удалить встречу "{{ elem.meeting_name }}"? 
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-success" data-bs-dismiss="modal">Отмена</button>
+                                          <a type="button" class="btn btn-danger" href="{% url 'delete_meeting' elem.id %}">Удалить</a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                              </div>
+                          {% endfor %}
+                        {% endif %}
+                        <!-- ОТОБРАЖЕНИЕ ЗАВЕРШЕННЫХ ВСТРЕЧ-->
+                        <div class="completed_meetings" style="margin-top:30px;">
+                          {% if meetings_result_completed %}
+                            <h3 style="color: green;">Завершенные встречи</h3>
+                            {% for elem in meetings_result_completed %}
+                                <p>{{ elem.meeting_name }}
+                                  <a href="{% url 'recover_meeting' elem.id %}"><img class="img"  src="{% static 'img/recover_clock.png' %}" alt="Картинка" title="Восстановить"></a>
+                                </p>
+                            {% endfor %}
+                          {% endif %}
+                        </div>
+            </div>
+
+            <div class="third_col">
+              <div class="third_col_cover">
+                          <!--СОЗДАНИЕ ЗАДАЧИ С АКТИВНОСТЯМИ-->
+                            <button class="open_modal" id="open_modal" style="background-color: red; margin: 20px;">Создать задачу</button><br>
+                            <div id="modal" class="modal">
+                                <div id="close_modal">+</div>
+                                    <form id='former' method="POST" action="{% url 'push_data' info.id 0 %}">
+                                      {% csrf_token %}
+                                        <div class="wrapper_task">
+                                            <label for="taskname">Введи название задачи</label>
+                                            <input id="taskname" name="taskname" type="text" required><br>
+                                            <label for="deadline">Введи дедлайн по задаче</label>
+                                            <input id="deadline" type="datetime-local" name="deadline" required><br><br>
+                                            <button class="create_activity" style="margin-bottom: 20px;">Создать подзадачу</button>
+                                            <!--тут генерируется кусок html класса .add_task-->
+                                            <br><button id='submit' style="background-color: yellowgreen; margin-top: 30px; border-radius: 3px;">Сохранить все введенные данные</button>
+                                        </div>
+                                    </form>
+                            </div>
+                            <!--СОЗДАНИЕ ВСТРЕЧИ-->
+                            <button class="open_modal_meeting" id="open_modal_meeting" style="background-color: green; margin: 20px;">Создать встречу</button><br>
+                            <div id="modal_meeting" class="modal_meeting">
+                              <div id="close_modal_meeting">+</div>
+                                  <form method="POST" action="{% url 'func_meeting' info.id %}">
+                                    {% csrf_token %}
+                                      <div class="wrapper_meeting">
+                                        <label for="meeting_name">Введи название встречи</label>
+                                          <input id="meeting_name" name="meeting_name" type="text" required>
+                                        <br><label for="meeting_time_start">Начало встречи</label>
+                                          <input id="meeting_time_start" type="datetime-local" name="meeting_time_start" class="meeting_time_start" required>
+                                        <br><label for="meeting_time_finish">Конец встречи</label>
+                                          <input id="meeting_time_finish" type="datetime-local" name="meeting_time_finish" class="meeting_time_finish" required>
+                                        <br><label for="meeting_notes">Заметки</label>
+                                          <input id="meeting_notes" type="text" name="meeting_notes">
+                                        <br><button class="inputdate" id='submit' style="background-color: yellowgreen; margin-top: 30px; border-radius: 3px;">Сохранить все введенные данные</button>
+                                      </div>
+                                  </form>
+                            </div>
+
+                          <!--КНОПКА ДОБАВЛЕНИЯ ФОТОГРАФИЙ В ПРОЕКТ (ПОДКЛЮЧИТЬ ПРИ НЕОБХОДИМОСТИ)-->
+                          <!-- <form method='POST' action="{% url 'add_photos' info.id %}" enctype="multipart/form-data">
+                              {% csrf_token %}
+                              <div class="card-body">
+                                <label for="images">Добавить фото в проект</label><br>
+                                <input type="file" name="images" id='images' multiple='multiple'>
+                              </div>
+                              <div class="card-body">
+                              <button class="btn btn-success" type="submit">Сохранить</button>
+                              <a href="{% url 'home' %}" class="btn btn-danger" type="submit">Отмена</a>
+                              </div>
+                          </form> -->
+              </div>
+            </div>
+        </div>
+{% else %}
+  <h2><a href="{% url 'login_func' %}">Пожалуйста, авторизуйтесь</a></h2>
+{% endif %}
+</body>
+
+<script>
+  // пакет Flatpickr для управления датой и/или временем
+  flatpickr('#deadline', {
+      enableTime: true,
+  /*  altInput: true,
+      altFormat: "d-m-Y H:i",   
+      Выставляет карсивый формат, НО нельзя потом через qurySelector внести изменения в строку, 
+      т.к. она становится hidden и создается новый class='form-control' */
+      minDate: "today",
+      minuteIncrement: 5,
+      "locale": "ru",
+  });
+
+  flatpickr('.meeting_time_start', {
+      enableTime: true,
+      minDate: "today",
+      minuteIncrement: 5,
+      "locale": "ru",
+  });
+
+  flatpickr('.meeting_time_finish', {
+    enableTime: true,
+    minuteIncrement: 5,
+    "locale": "ru",
+  });
+
+</script>
+</html>

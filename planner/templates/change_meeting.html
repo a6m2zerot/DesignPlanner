@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> <!--Необходимо для flatpickr-->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> <!--Необходимо для flatpickr-->
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css"> <!--меняет цвет окна flatpickr-->
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script> <!--Русский пакет для flatpickr-->
+    <title>Document</title>
+    <style>
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 30%;
+        height: 30%;
+        border: 2px solid rgb(55, 94, 223);
+        border-radius: 10px;
+    }
+        img {
+            width: 30px;
+            height: 30px;
+        }
+        button {
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <form class='form' action="{% url 'change_meeting' meeting.id %}" method="POST">
+            {% csrf_token %}
+
+            <label for="{{ form.meeting_name.id_for_label }}">{{ form.meeting_name.label }}</label>
+            {{ form.meeting_name }}
+            <br>
+            <label for="{{ form.meeting_time_start.id_for_label }}">{{ form.meeting_time_start.label }}</label>
+            {{ form.meeting_time_start }}
+            <br>
+            <label for="{{ form.meeting_time_finish.id_for_label }}">{{ form.meeting_time_finish.label }}</label>
+            {{ form.meeting_time_finish }}
+            <br>
+            <label for="{{ form.meeting_notes.id_for_label }}">{{ form.meeting_notes.label }}</label>
+            {{ form.meeting_notes }}
+            <br>
+            <button type="submit" class="inputdate"><img src="{% static 'img/save.png' %}" alt="Картинка" title="Сохранить"></button>
+        </form>
+    </div>
+
+        <script>
+            // пакет Flatpickr для управления датой и/или временем
+
+            flatpickr('input[name="meeting_time_start"]', {
+                enableTime: true,
+                minDate: "today",
+                minuteIncrement: 5,
+                "locale": "ru",
+            });
+
+            flatpickr('input[name="meeting_time_finish"]', {
+                enableTime: true,
+                minuteIncrement: 5,
+                "locale": "ru",
+            });
+
+            const mts = document.querySelector('#id_meeting_time_start');
+            const mtf = document.querySelector('#id_meeting_time_finish');
+            const inputDate = document.querySelector('.inputdate');
+            const inputIMG = document.querySelector('img');
+
+            const checkForm = () => {
+                if(mts.value && mtf.value){
+                    inputIMG.style.filter = 'grayscale(0)'
+                    inputDate.disabled = false
+                }else{
+                    inputIMG.style.filter = 'grayscale(1)'
+                    inputDate.disabled = true
+                }
+            };
+
+            checkForm()
+
+            mts.addEventListener('change', checkForm)
+            mtf.addEventListener('change', checkForm)
+
+            mts.addEventListener('change', ()=> {
+                let new_mts = new Date(document.querySelector('input[name="meeting_time_start"]').value);
+                new_mts.setHours(new_mts.getHours() + 4);  //! Здесь добавляем в функции ".... +4", т.к. учиьываем  часовой пояс UTC+3 и добавляем смещение на +1 час вперед
+                let output = new_mts.toISOString().slice(0, 16).replace(/T/g, ' ');
+                mtf.value = output;
+                checkForm()
+            });
+
+
+        </script>
+</body>
+</html>
+
+
+

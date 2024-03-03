@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> <!--Необходимо для flatpickr-->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> <!--Необходимо для flatpickr-->
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css"> <!--меняет цвет окна flatpickr-->
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script> <!--Русский пакет для flatpickr-->
+    <style>
+    .center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 30%;
+        height: 30%;
+        border: 2px solid rgb(55, 94, 223);
+        border-radius: 10px;
+    }
+    </style>
+    <title>Document</title>
+</head>
+<body>
+    <div class="center">
+        <form action="{% url 'return_task' task.id %}" method="POST">
+            {% csrf_token %}
+        
+            <label for="{{ form.task.id_for_label }}">{{ form.task.label }}</label>
+            {{ form.task }}
+            <br>
+            <label for="{{ form.deadline.id_for_label }}">{{ form.deadline.label }}</label>
+            {{ form.deadline }}
+            <br>
+            <button type="submit">Сохранить</button>
+        </form>
+    </div>
+
+    <script>
+        // пакет Flatpickr для управления датой и/или временем
+        flatpickr('input[type=datetime-local]', {
+            enableTime: true,
+            minDate: "today",
+            minuteIncrement: 5,
+            "locale": "ru",
+        });
+    </script>
+</body>
+</html>
+
+
+
+
