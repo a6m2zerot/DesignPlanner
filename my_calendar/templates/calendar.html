@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{% static 'js/blocksColor.js' %}" defer></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script> Нужен для получения csrftoken -а--> 
+    <script src="{% static 'js/dayChoice.js' %}" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <style>
+        .year {
+            display:inline-block;
+            color: red; text-align: center;
+        }
+        .my_container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            grid-column-gap: 10px;
+            grid-row-gap: 10px;
+            width: 60%;
+            margin: 0 auto;
+        }
+        /* .show_all {
+            width: 60%;
+            margin: 0 auto;
+            margin-top: 100px;
+        } */
+        .day {
+            height: 100px;
+            background-color: transparent;
+        }
+        .day_name {
+            text-align: center;
+            width: 13%;
+            height: 5px;
+            margin: 10px;
+            background-color: transparent;
+        }
+        .round {
+            width: 100px;
+            height: 100px;
+            background-color: #61B4CF;
+            border-radius: 10%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            position: relative;
+        }
+        .events, 
+        .meetings {
+            display: none;
+        }
+        .evs {
+            border: none;
+            background-color: red;
+            color: red;
+            height: 2px;
+            width: 80%;
+            margin: 5px auto;
+        }
+        .mts {
+            border: none;
+            background-color: green;
+            color: green;
+            height: 2px;
+            width: 80%;
+            margin: 0 auto;
+        }
+        /*HEADER styles*/
+        .container_header {  
+            display: grid;
+            grid-template-columns: 0.5fr 0.5fr 2fr 0.5fr 0.5fr;
+            grid-template-rows: 1fr;
+            gap: 0px 0px;
+            grid-auto-flow: row;
+            grid-template-areas: "home back functions username out";
+            height: auto;
+            background-color: whitesmoke;
+            margin-bottom: 20px;
+        }
+
+        .home { grid-area: home; margin: 10px; text-align: center; text-decoration: none;}
+        .back { grid-area: back; margin: auto; text-align: center;}
+        .functions { grid-area: functions; margin: auto; text-align: center;}
+        .username { grid-area: username; margin: auto; text-align: center;}
+        .out { grid-area: out; margin: auto; text-align: center;}
+
+        .btn-new,
+        .back,
+        .home {
+            border-radius: 10px;
+            color: #1755c0;
+            transition: .2s linear;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px #4f8fff;
+        }
+
+        .btn-new:hover,
+        .back:hover,
+        .home:hover {
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3C82F8;
+        }
+        .main{
+            display: flex;
+        }
+        .first_col{
+            flex: 80;
+        }
+        .second_col{
+            flex: 20;
+        }
+    </style>
+    <title>Document</title>
+</head>
+<body>
+{% if user.is_authenticated %}
+
+    <!--NAVBAR -->
+    <div class="container_header">
+        <a class="home" href="{% url 'home' %}"><img class="logo_image" src="{% static 'img/fox.png' %}" alt="home_logo">На главную</a>
+        <a class="back" href="{{request.META.HTTP_REFERER}}">Назад</a>
+        <div class="functions">
+            <a type="submit" class="btn-new" href="{% url 'new_date' %}" style="margin-right: 40px">Календарный вид</a>
+            <a type="submit" class="btn-new" href="{% url 'creation_form' %}">Создать новый проект</a>
+        </div>
+        <div class="username">Пользователь: <b>{{ user.username }}</b></div>
+        <div class="out"><a type="submit" class="btn-new" href="{% url 'logout_func' %}">Выйти</a></div>
+      </div>
+
+<div class="main">
+<div class="first_col">
+    <form action="{% url 'filter_date' %}" method="POST" style="display:flex; justify-content: center; width: 100%;">
+        {% csrf_token %}
+            <select name="year" aria-label="Default select example">
+              <!-- <option selected>Выбери год</option> -->
+                <option value="2023" name="year">2023</option>
+                <option value="2024" name="year">2024</option>
+                <option value="2025" name="year">2025</option>
+                <option value="2026" name="year">2026</option>
+                <option value="2027" name="year">2027</option>
+            </select>
+
+            <button type='submit' name="month" value="January">Январь</button>
+            <button type='submit' name="month" value="February">Февраль</button>
+            <button type='submit' name="month" value="March">Март</button>
+            <button type='submit' name="month" value="April">Апрель</button>
+            <button type='submit' name="month" value="May">Май</button>
+            <button type='submit' name="month" value="June">Июнь</button>
+            <button type='submit' name="month" value="July">Июль</button>
+            <button type='submit' name="month" value="August">Август</button>
+            <button type='submit' name="month" value="September">Сентябрь</button>
+            <button type='submit' name="month" value="October">Октябрь</button>
+            <button type='submit' name="month" value="November">Ноябрь</button>
+            <button type='submit' name="month" value="December">Декабрь</button>
+        </form>
+
+        <h2 style="color: green; text-align: center;" class="checked_year">Текущий год: {{ year }}</h2>
+        <h2 style="color: green; text-align: center;">{{ month }}</h2>
+
+        <div class="my_container">
+            <div class="day_name">Пон</div>
+            <div class="day_name">Вт</div>
+            <div class="day_name">Ср</div>
+            <div class="day_name">Чт</div>
+            <div class="day_name">Пт</div>
+            <div class="day_name">Сб</div>
+            <div class="day_name">Вс</div>
+
+
+                <!--Создаем пустые блоки необходимого количества  -->
+                {% for i in range %}
+                    <div class="day" style="background-color: transparent;">
+                        <div class="round" style="background-color: transparent;"></div>
+                    </div>
+                {% endfor %}
+
+                {% for i in days_amount %}
+                    <div class='day'>
+                        <div class="round" value="{{ i }}">{{ i }}
+                        {% if events %}
+                                {% for event in events %}
+                                    {% if i == event.deadline.day %}                   
+                                        <p class="evs"></p>
+                                    {% endif %}
+                                {% endfor %}
+                        {% endif %}
+                                {% if meetings %}
+                                    {% for m in meetings %}
+                                    {% if i == m.meeting_time_start.day %}
+                                        <p class="mts"></p>
+                                    {% endif %}
+                                {% endfor %}
+                        {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+        </div>
+</div>
+
+
+<div class="second_col">
+        <div class="show_all">
+            {% for i in days_amount %}
+                    {% if events %}
+                            {% for event in events %}
+                                    {% if i == event.deadline.day %}
+                                        <div class="events" value="{{ i }}" style="color: red;">{{ event.task}} {{ event.deadline }} {{ event.task_status }}</div>
+                                    {% endif %}
+                            {% endfor %}
+                    {% endif %}
+            {% endfor %}
+            <br>
+            {% for i in days_amount %}
+                    {% if meetings %}
+                            {% for m in meetings %}
+                                    {% if i == m.meeting_time_start.day %}
+                                        <div class="meetings" value="{{ i }}" style="color: green;">{{ m.meeting_name}} {{ m.project }}</div>
+                                    {% endif %}
+                            {% endfor %}
+                    {% endif %}
+            {% endfor %}
+        </div>
+</div>
+</div>
+
+{% else %}
+    <h2><a href="{% url 'login_func' %}">Пожалуйста, авторизуйтесь</a></h2>
+{% endif %}
+
+
+<script>
+        const allOp = document.querySelectorAll('option')
+
+        const year = document.querySelector('.checked_year').textContent.replace('Текущий год:', '').trim()
+
+        for (let o of allOp) {
+            if (o.value == year) {
+                console.log(o, '+++++++++++++++++++=')
+                o.selected = true
+            }
+        }
+</script>
+</body>
+</html>
